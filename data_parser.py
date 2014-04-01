@@ -362,6 +362,10 @@ class Variant(Struct):
             return DictVariant.parse(stream, ctx)
 
 
+class ProtocolVersion(Struct):
+    server_build = UBInt32
+
+
 class ClientConnect(Struct):
     asset_digest = StarByteArray
     claim = Variant
@@ -372,12 +376,31 @@ class ClientConnect(Struct):
     account = StarString
 
 
+class ClientDisconnect(Struct):
+    data = Byte
+
+
+class HandshakeChallenge(Struct):
+    claim = StarString
+    salt = StarByteArray
+    rounds = UBInt32
+
+
+class HandshakeResponse(Struct):
+    claim = StarString
+    hash = StarString
+
+
 class ChatReceived(Struct):
     channel = Byte
     world = StarString
     client_id = UBInt32
     name = StarString
     message = StarString
+
+
+class UniverseTimeUpdate(Struct):
+    unknown = VLQ
 
 
 class WarpCommand(Struct):
@@ -405,6 +428,10 @@ class WorldStart(Struct):
     world_properties = Variant
     client_id = UBInt32
     local_interpolation = Flag
+
+
+class WorldStop(Struct):
+    status = StarString
 
 
 class GiveItem(Struct):
