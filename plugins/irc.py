@@ -6,10 +6,6 @@ from base_plugin import BasePlugin
 from plugins.player_manager import Owner, Guest
 from utilities import broadcast
 
-temp_server = "irc.freenode.net"
-temp_channel = "##starrypy"
-temp_username = "starrypytest"
-
 
 class MockPlayer:
     """
@@ -77,12 +73,19 @@ class IRCPlugin(BasePlugin):
 
     def activate(self):
         super().activate()
+        self.storage = self.plugins.player_manager.get_storage(self)
         self.protocol = MockProtocol(self)
         self.prefix = self.config.get_plugin_config('command_dispatcher')[
             'command_prefix']
+        if "server" not in self.storage:
+            self.storage['server'] = "irc.freenode.net"
+        if "channel" not in self.storage:
+            self.storage['channel'] = "##traxo-starrypy"
+        if "username" not in self.storage:
+            self.storage['username'] = "traxo_starrypy3k"
         self.dispatcher = self.plugins.command_dispatcher
-        self.bot = irc3.IrcBot(nick=temp_username, autojoins=[temp_channel],
-                               host=temp_server)
+        self.bot = irc3.IrcBot(nick=self.storage['username'], autojoins=[self.storage['channel']],
+                               host=self.storage['server'])
         self.bot.log = self.logger
         self.bot.include('irc3.plugins.core')
         self.bot.include('irc3.plugins.userlist')
@@ -105,7 +108,7 @@ class IRCPlugin(BasePlugin):
     def forward(self, mask, event, target, data):
         if data[0] == ".":
             asyncio.Task(self.handle_command(target, data[1:], mask))
-        elif target == temp_channel:
+        elif target == self.storage['channel']:
             nick = mask.split("!")[0]
             asyncio.Task(self.send_message(data, nick))
         return None
@@ -139,7 +142,7 @@ class IRCPlugin(BasePlugin):
     @asyncio.coroutine
     def bot_write(self, msg, target=None):
         if target is None:
-            target = temp_channel
+            target = self.storage['channel']
         self.bot.privmsg(target, msg)
 
     @asyncio.coroutine
@@ -165,4 +168,4 @@ class IRCPlugin(BasePlugin):
     def update_ops(self):
         while True:
             yield from asyncio.sleep(10)
-            self.bot.send("NAMES %s" % temp_channel)
+            self.bot.send("NAMES %s" % self.storage['channel'])
